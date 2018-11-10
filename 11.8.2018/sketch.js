@@ -2,11 +2,14 @@ const canvasSketch = require('canvas-sketch');
 
 import Two from 'two.js'
 
+import gradient_color from 'gradient-color'
+
 
 const settings = {
   dimensions: [ 1024, 1024 ],
   animate: true,
   duration: 4,
+  fps: 30,
 };
 
 const sketch = ({ canvas, width, height, pixelRatio }) => {
@@ -19,54 +22,144 @@ const sketch = ({ canvas, width, height, pixelRatio }) => {
     ratio: pixelRatio
   });
 
+  // const colors = gradient_color(['red', 'white'], 100)
+  const colors = gradient_color([
+    'white', 'white', 'white', 'white',
+    'white', 'white', 'white', 'white',
+    'orange', 'green', 'blue', 'purple', 'red',
+  ], 100)
+  // const colors = gradient_color([
+  //   'white', 'white', 'white', 'white',
+  //   '#FFDEE4', '#FFDEE4',
+  // ], 100)
 
   const background = new Two.Rectangle(0, 0, two.width, two.height);
   background.noStroke();
-  // Radial Gradient has origin x, y a radius then an array of color stops
-  // Each stop requires an offset value (0 - 1) and a CSS compatible color
+
+  // background.fill = new Two.RadialGradient(0, 0, two.height / 2, [
+  //   new Two.Stop(0, 'tomato'),
+  //   new Two.Stop(1, 'rgb(255, 50, 50)')
+  // ]);
+
   background.fill = new Two.RadialGradient(0, 0, two.height / 2, [
-    new Two.Stop(0, 'tomato'),
-    new Two.Stop(1, 'rgb(255, 50, 50)')
+    // new Two.Stop(0, '#fff0f0'),
+    new Two.Stop(0, 'white'),
+    new Two.Stop(1, 'white')
   ]);
 
-  const OVAL_WIDTH = 70
-  const OVAL_HEIGHT = 45
+  const getPawCoords = (x, y) => {
+    return [
+      [x + 0, y + 120],
+      [x + 150, y + 0],
+    ]
+  }
 
-  // Create the subject of the visual output
-  const rectangle = new Two.Ellipse(0, 0, OVAL_WIDTH, OVAL_HEIGHT);
-  rectangle.noStroke();
+  const getTrail = (x = 0, y = 0) => {
+    return [
+      getPawCoords(x, y + -50),
+      getPawCoords(x, y + 200),
+      getPawCoords(x, y + 450),
+      getPawCoords(x, y + 700),
+      getPawCoords(x, y + 950),
+    ].reverse()
+  }
 
-  const oval2 = new Two.Ellipse(110, 0, OVAL_WIDTH, OVAL_HEIGHT);
-  oval2.noStroke();
+  // const pawCoordSets = getTrail(600, 50)
+  const pawCoordSets = getTrail(300, -50)
 
-  const oval3 = new Two.Ellipse(195, 100, OVAL_WIDTH, OVAL_HEIGHT);
-  oval3.noStroke();
+  two.add(background)
 
-  const oval4 = new Two.Ellipse(-80, 100, OVAL_WIDTH, OVAL_HEIGHT);
-  oval4.noStroke();
-
-  rectangle.rotation = 1.45
-  oval2.rotation = 1.6
-  oval3.rotation = 1.7
-  oval4.rotation = 1.4
-
-
-  const circle = new Two.Ellipse(60, 165, 70, 70);
-  circle.noStroke();
-  const circle2 = new Two.Ellipse(25, 205, 70, 60);
-  circle2.noStroke();
-  const circle3 = new Two.Ellipse(95, 205, 70, 60);
-  circle3.noStroke();
+  let pawCounter = 0
 
 
-  var group = new Two.Group();
+  const getPaw = function() {
 
-  group.add(rectangle, oval2, oval3, oval4, circle, circle2, circle3)
+    const OVAL_WIDTH = 70
+    const OVAL_HEIGHT = 45
 
+    const pawIndex = pawCounter + 0
 
-  // Add both the background and rectangle to the scene
-  // Order matters here:
-  two.add(background, group);
+    const oval1 = new Two.Ellipse(0, 0, OVAL_WIDTH, OVAL_HEIGHT);
+    oval1.noStroke();
+
+    const oval2 = new Two.Ellipse(110, 0, OVAL_WIDTH, OVAL_HEIGHT);
+    oval2.noStroke();
+
+    const oval3 = new Two.Ellipse(195, 100, OVAL_WIDTH -10, OVAL_HEIGHT - 5);
+    oval3.noStroke();
+
+    const oval4 = new Two.Ellipse(-80, 100, OVAL_WIDTH -10, OVAL_HEIGHT - 5);
+    oval4.noStroke();
+
+    oval1.rotation = 1.45
+    oval2.rotation = 1.55
+    oval3.rotation = 1.7
+    oval4.rotation = 1.4
+
+    const circle1 = new Two.Ellipse(60, 165, 70, 70);
+    circle1.noStroke();
+    const circle2 = new Two.Ellipse(25, 205, 70, 60);
+    circle2.noStroke();
+    const circle3 = new Two.Ellipse(95, 205, 70, 60);
+    circle3.noStroke();
+
+    const group = new Two.Group();
+    const groupContainer = new Two.Group();
+    const groupContainer2 = new Two.Group();
+
+    group.add(oval1, oval2, oval3, oval4, circle1, circle2, circle3)
+
+    group.fill = 'pink'
+
+    group.translation.set(-50, -90);
+    groupContainer.add(group)
+
+    groupContainer.translation.set(-two.width/2, -two.width/2);
+
+    groupContainer2.add(groupContainer)
+
+    pawCounter++
+
+    return {
+      setScale: (scale) => {
+        groupContainer.scale = scale
+      },
+      group: groupContainer2,
+      getVisible: (playhead) => {
+        const currentIndex = pawIndex + 1
+        const totalIndexes = (pawCoordSets.length * 2) * 4
+
+        const percentCompleteRequired = currentIndex / totalIndexes
+
+        if (playhead > percentCompleteRequired) {
+          return 1 - (playhead - percentCompleteRequired)
+        }
+
+        return 0
+      }
+    }
+  }
+
+  const pawSets = pawCoordSets.map((pawCoords, pawSetIndex) => {
+    const paws = pawCoords.map((_, i) => {
+      return getPaw(pawSetIndex, i)
+    })
+
+    return paws.map((paw, i) => {
+      const coords = pawCoords[i]
+
+      const { group, setScale } = paw
+
+      group.translation.set(coords[0], coords[1])
+
+      setScale(0.2)
+
+      two.add(group)
+
+      return paw
+
+    })
+  })
 
   // Orient the scene to make 0, 0 the center of the canvas
   two.scene.translation.set(two.width / 2, two.height / 2);
@@ -96,11 +189,18 @@ const sketch = ({ canvas, width, height, pixelRatio }) => {
       background.height = two.height;
 
     },
-    render: ({ context, width, height, deltaTime }) => {
+    render: ({ context, width, height, deltaTime, playhead }) => {
 
-      // group.rotation += 2 * deltaTime
-      // rectangle.rotation += 2 * deltaTime;
-      // Update two.js via the `render` method — *not* the `update` method.
+      pawSets.map((pawSet) => {
+
+        pawSet.map(({group, getVisible}, pawIndex) => {
+
+          const colorIndex = Math.floor(getVisible(playhead) * 100)
+
+          group.fill = colors[colorIndex]
+        })
+      })
+
       two.render();
 
     }
