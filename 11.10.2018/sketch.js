@@ -1,8 +1,25 @@
 const canvasSketch = require('canvas-sketch')
 
+const shuffle = (array) => {
+  let currentIndex = array.length;
+  let temporaryValue;
+  let randomIndex;
+  const newArray = array.slice();
+  // While there remains elements to shuffle...
+  while (currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    // Swap it with the current element.
+    temporaryValue = newArray[currentIndex];
+    newArray[currentIndex] = newArray[randomIndex];
+    newArray[randomIndex] = temporaryValue;
+  }
+  return newArray;
+}
+
 import Two from 'two.js'
 
-import { triggerAnimations } from './section-animator'
+import { triggerAnimations } from '../section-animator'
 
 //defined sections
 
@@ -21,7 +38,7 @@ const settings = {
   dimensions: [ 1024, 1024 ],
   animate: true,
   fps: 30,
-  duration: 4,
+  duration: 8,
 }
 
 const sketch = ({ width, height, canvas, pixelRatio }) => {
@@ -40,31 +57,109 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
   const background = new Two.Rectangle(width/2, height/2, width, height)
   background.noStroke()
   background.fill = new Two.RadialGradient(0, 0, height / 2, [
-    new Two.Stop(0, 'white'),
-    new Two.Stop(1, 'hsl(211, 100%, 90%)')
-  ])
+    new Two.Stop(0, '#ff4355'),
+    new Two.Stop(1, '#cc1022'),
+  ], -100, -300)
   two.add(background)
-
-
-  // const group = new Two.Group()
-  //
-  // group.add(background)
-
-  // two.add(group)
-  // two.scene.translation.set(width / 2, height / 2)
-
-
 
   //todo take care of moving bottom teeth origin down
 
   const TOOTH_WIDTH = 340
   const numTeethInRowRaw = width / TOOTH_WIDTH
   const numTeeth = Math.ceil(numTeethInRowRaw) * 2
+  const TOOTH_RADIUS = 40
 
   const TEETH_ORIGIN_X = numTeethInRowRaw % 1 < 0.5 ? TOOTH_WIDTH / 2 : TOOTH_WIDTH / 4
   const TOOTH_HEIGHT = height / 2
 
   const halfTeethIndex = Math.ceil(numTeeth / 2)
+
+  const group = new Two.Group()
+
+  group.add(
+    // circle,
+  )
+
+  //locate the center of the circle
+
+  //radius
+
+  //(x - xorigin)2 + (y + yorigin)2 = radius
+
+  //(x - origin) + (y - yorigin) = Math.sqrt(radius)
+
+  const numCircles = 10
+  const numFlowers = 13
+
+  const flowers = shuffle(([...Array(numFlowers - 1)]).map((_, i) => {
+
+    const flowerAngle = i * (360 / numFlowers)
+
+    const flowersOriginX = width / 2
+    const flowersOriginY = height / 2
+
+    const flowerRadius = 700
+
+    const xOrigin = flowersOriginX + flowerRadius * Math.cos(-flowerAngle*Math.PI/180)
+    const yOrigin = flowersOriginY + flowerRadius * Math.sin(-flowerAngle*Math.PI/180)
+
+    const circles = []
+
+    ;([...Array(numCircles)]).map((_, j) => {
+      // const x, y
+      // const angle
+
+      const circleAngle = j * (360 / numCircles)
+
+
+      const radius = 200
+      const circleRadius = 200
+
+      const x = xOrigin + radius * Math.cos(-circleAngle*Math.PI/180)
+      const y = yOrigin + radius * Math.sin(-circleAngle*Math.PI/180)
+
+      const circle = new Two.Ellipse(x, y, circleRadius, circleRadius)
+
+      circle.noStroke()
+
+      circle.fill = 'transparent'
+
+      circles.push(circle)
+
+      two.add(circle)
+    })
+
+    return circles
+
+  }))
+
+  const middleCircles = ([...Array(numCircles)]).map((_, j) => {
+    // const x, y;
+
+    // const angle
+
+    const circleAngle = j * (360 / numCircles)
+
+
+    const radius = 200
+    const circleRadius = 200
+
+    const x = (width / 2) + radius * Math.cos(-circleAngle*Math.PI/180)
+    const y = (height / 2) + radius * Math.sin(-circleAngle*Math.PI/180)
+
+    const circle = new Two.Ellipse(x, y, circleRadius, circleRadius)
+
+    circle.noStroke()
+
+    circle.fill = 'transparent'
+    two.add(circle)
+
+    return circle
+  })
+
+
+  flowers.push(middleCircles)
+
   const teeth = [...Array(numTeeth)].map((_, i) => {
 
     const index = numTeeth - 1 - i
@@ -84,7 +179,7 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
     } else {
       toothHeight = TOOTH_HEIGHT + 40
       toothOffsetX = (index * toothWidth) - TEETH_ORIGIN_X
-      toothOffsetY = 0
+      toothOffsetY = -500
     }
 
     const toothCenterX = toothWidth / 2
@@ -92,16 +187,15 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
     const toothX = toothCenterX + toothOffsetX
     const toothY = toothCenterY + toothOffsetY
 
-    const tooth = new Two.RoundedRectangle(toothX, toothY, toothWidth, toothHeight, 15)
+    const tooth = new Two.RoundedRectangle(toothX, toothY, toothWidth, toothHeight, TOOTH_RADIUS)
 
-    // tooth.noStroke()
-    tooth.fill = 'white'
+    tooth.noStroke()
+    tooth.fill = 'transparent'
 
     two.add(tooth)
 
     return tooth
   })
-
 
 
 
@@ -120,23 +214,33 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
 
       const animations = [
         {
-          startFloat: 0.2,
-          endFloat: 0.9,
+          startFloat: 0.1,
+          endFloat: 0.6,
           animationCallback: (animationPlayhead) => {
+            const filtered = flowers.filter((circles, i) => {
+              return (i +1) / flowers.length <= animationPlayhead + 0.1
+            })
 
-            // const infinitePlayheadOffset = Math.sin(animationPlayhead * infiniteCircle)
-            // const backgroundCenterX = background.width / 2
-            // const backgroundCenterY = background.height / 2
+            filtered.map((circles, i) => {
+              circles.map((circle, j) => {
+                circle.fill = 'white'
+              })
+            })
 
-            const scaleSize = .5
-            const scale = 1 + (animationPlayhead * scaleSize)
-            background.scale = scale
-          },
+          }
         },
         {
-          startFloat: 0.2,
+          startFloat: 0.7,
           endFloat: 0.9,
           animationCallback: (animationPlayhead, infinitePlayheadOffset) => {
+
+            flowers.map((circles) => {
+              circles.map((circle, j) => {
+                circle.fill = 'transparent'
+              })
+            })
+
+            // console.log(animationPlayhead)
             teeth.map((tooth, i) => {
 
               const index = numTeeth - 1 - i
@@ -154,7 +258,7 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
                 toothOffsetY = (animationPlayhead * toothHeight + 40) + toothHeight
               } else {
                 toothOffsetX = (index * toothWidth) - TEETH_ORIGIN_X
-                toothOffsetY = (animationPlayhead * -(toothHeight + 40))
+                toothOffsetY = (animationPlayhead * -(toothHeight + 500))
               }
 
               const toothX = toothCenterX + toothOffsetX
@@ -167,15 +271,35 @@ const sketch = ({ width, height, canvas, pixelRatio }) => {
               tooth.translation.set(toothX, toothY)
 
             })
-
           },
-        }
+        },
+        {
+          startFloat: 0.65,
+          endFloat: 0.9,
+          animationCallback: (animationPlayhead) => {
+
+            // const infinitePlayheadOffset = Math.sin(animationPlayhead * infiniteCircle)
+            // const backgroundCenterX = background.width / 2
+            // const backgroundCenterY = background.height / 2
+
+            const scaleSize = 1
+            const scale = 1 + (animationPlayhead * scaleSize)
+            background.scale = scale
+          },
+        },
+
       ]
 
       triggerAnimations(animations, playhead)
       two.render();
 
     },
+    end: () => {
+      background.scale = 2
+      teeth.map((tooth) => {
+        tooth.fill = 'white'
+      })
+    }
   }
 }
 
