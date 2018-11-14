@@ -1,9 +1,4 @@
 const triggerAnimation = (playhead, { startFloat, endFloat, animationCallback }, animationIndex) => {
-
-  //startFloat .5
-  //endFloat .7
-  //playhead .6
-
   const end = endFloat || 1
   const animationLength = end - startFloat
 
@@ -15,15 +10,20 @@ const triggerAnimation = (playhead, { startFloat, endFloat, animationCallback },
 
     const amountIntoAnimation = playhead - startFloat
     const animationPlayhead = amountIntoAnimation / animationLength
-    console.log('ANIMATION %s: %s', animationIndex, animationPlayhead)
 
-    animationCallback(animationPlayhead)
+    const infiniteCircle = Math.PI * 4
+    const infinitePlayheadOffset = Math.sin(animationPlayhead * infiniteCircle)
+
+
+    // console.log('ANIMATION %s: %s', animationIndex, animationPlayhead)
+
+    animationCallback(animationPlayhead, infinitePlayheadOffset)
   }
 
 }
 
 export const triggerAnimations = (animations, playhead) => {
-  console.log('PLAYHEAD: %s', playhead)
+  // console.log('PLAYHEAD: %s', playhead)
   animations.map((animation, i) => {
     triggerAnimation(playhead, animation, i)
   })
