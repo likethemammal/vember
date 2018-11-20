@@ -15,7 +15,7 @@ const triggerAnimation = (playhead, { startFloat, endFloat, animationCallback },
     const infinitePlayheadOffset = Math.sin(animationPlayhead * infiniteCircle)
 
 
-    console.log('ANIMATION %s: %s', animationIndex, animationPlayhead)
+    // console.log('ANIMATION %s: %s', animationIndex, animationPlayhead)
 
     animationCallback(animationPlayhead, infinitePlayheadOffset)
   }

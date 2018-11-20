@@ -31,7 +31,7 @@ const sketch = ({ context }) => {
 
   // WebGL background color
   renderer.setClearColor('#be9ef4', 1)
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = true
 
 
   // Setup a camera
