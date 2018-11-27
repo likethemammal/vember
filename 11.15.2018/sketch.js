@@ -318,7 +318,7 @@ const sketch = ({ context }) => {
         )
 
         if (i % 2 === 0) {
-          light4.intensity = Math.sin(animationPlayhead * Math.PI)
+          light4.intensity = Math.sin(animationPlayhead * Math.PI) / 4
         }
 
         // if (animationPlayhead > 0.8) {
