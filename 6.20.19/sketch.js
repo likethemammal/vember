@@ -44,10 +44,10 @@ const canvasSketch = require('canvas-sketch');
 global.THREE = require('three');
 
 // Include any additional ThreeJS examples below
-require('three/examples/js/controls/OrbitControls');
+// require('three/examples/js/controls/OrbitControls');
 
 
-const duration = 4
+const duration = 45
 
 const settings = {
   // Make the loop animated
@@ -60,7 +60,24 @@ const settings = {
   fps: 30,
 }
 
+
 function boot() {
+
+  const meshes = []
+  const AREA_SIZE = 200
+
+  const sites = [...Array(AREA_SIZE)].map((_, i) => {
+    return {
+      x: Math.random(),
+      y: Math.random()
+    }
+  })
+
+  const voronoi = new Voronoi();
+  const result = voronoi.compute(sites, {
+    xl:0, xr:1,
+    yt:0, yb:1
+  });
 
   const sketch = ({ context }) => {
     // Create a renderer
@@ -69,7 +86,7 @@ function boot() {
     });
 
     // WebGL background color
-    renderer.setClearColor('#fff', 1);
+    // renderer.setClearColor('black', 1);
 
     //CAMERA
     const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
@@ -80,12 +97,12 @@ function boot() {
     const cameraDistanceFromCenter = 0
 
     camera.position.set(-cameraDistanceFromCenter, CAMERA_Y, cameraDistanceFromCenter);
-    camera.lookAt(new THREE.Vector3(0,CAMERA_Y,0));
+    camera.lookAt(new THREE.Vector3(0, 0,0));
 
     camera.far = 1000
 
     // Setup camera controller
-    const controls = new THREE.OrbitControls(camera, context.canvas);
+    // const controls = new THREE.OrbitControls(camera, context.canvas);
 
     // Setup your scene
     const scene = new THREE.Scene()
@@ -93,25 +110,9 @@ function boot() {
 
     const near = 1;
     const far = 1000;
-    const color = 'white';
-    scene.fog = new THREE.Fog(color, near, far)
+    const color = 'black';
+    // scene.fog = new THREE.Fog(color, near, far)
     scene.background = new THREE.Color(color)
-
-    const meshes = []
-    const AREA_SIZE = 200
-
-    const sites = [...Array(AREA_SIZE)].map((_, i) => {
-      return {
-        x: Math.random(),
-        y: Math.random()
-      }
-    })
-
-    const voronoi = new Voronoi();
-    const result = voronoi.compute(sites, {
-      xl:0, xr:1,
-      yt:0, yb:1
-    });
 
     const extrudeSettings = {
       steps: 2,
@@ -148,11 +149,6 @@ function boot() {
 
       const color = colors[indexFromDistance]
 
-      const material = new THREE.MeshStandardMaterial({
-        color: 'white',
-        roughness: 1,
-      })
-
       const points = []
       for (let i = 0; i < cell.halfedges.length; i++) {
         const start = cell.halfedges[i].getStartpoint();
@@ -163,6 +159,11 @@ function boot() {
         )
       }
       points.push(points[0])
+
+      const material = new THREE.MeshPhysicalMaterial({
+        color: 'white',
+        roughness: 1,
+      })
 
       const offset = -0.4 * Math.sqrt(Math.abs(THREE.ShapeUtils.area(points)));
       const shape = new THREE.Shape(points);
@@ -176,16 +177,16 @@ function boot() {
       )
 
       mesh.scale.y = 8
-      mesh.geometry.applyMatrix(rotation);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      mesh.geometry.applyMatrix(rotation)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
 
-      const pivot = new THREE.Group();
+      const pivot = new THREE.Group()
 
-      scene.add( pivot );
-      pivot.add( mesh );
+      scene.add( pivot )
+      pivot.add( mesh )
 
-      const box = new THREE.Box3().setFromObject( pivot );
+      const box = new THREE.Box3().setFromObject( pivot )
       const center = box.getCenter()
 
 
@@ -265,8 +266,8 @@ function boot() {
 
     // orb field
     const lengthFromCenter = 45
-    const orbRadius = 20
-    const distanceDown = 6
+    const orbRadius = 25
+    const distanceDown = 11
 
     const onmousemove = (event) => {
 
@@ -299,7 +300,10 @@ function boot() {
         const percentDistance = distance / orbRadius
 
         let newRotationZ = rotation.z
-        newRotationZ = lookAtZ / distance
+
+        // if (distance < orbRadius) {
+          newRotationZ = lookAtZ / distance
+        // }
 
         const newRotation = new THREE.Vector3(rotation.x, rotation.y, newRotationZ)
 
@@ -358,6 +362,101 @@ function boot() {
     //
     // scene.add(crystal)
 
+    const fieldDistance = 400
+    const maxRadius = 1
+
+    const colorTop = 'hsl(266, 73%, 8%)'
+    const colorBottom = 'hsl(293, 68%, 13%)'
+
+    const gradientMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        color1: {
+          value: new THREE.Color(colorBottom)
+        },
+        color2: {
+          value: new THREE.Color(colorTop)
+        }
+      },
+      vertexShader: `
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+  `,
+      fragmentShader: `
+    uniform vec3 color1;
+    uniform vec3 color2;
+  
+    varying vec2 vUv;
+    
+    void main() {
+      
+      gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0);
+    }
+  `,
+    })
+
+    const geometry = new THREE.BoxGeometry(
+      700,
+      2,
+      700,
+    )
+
+    const plane = new THREE.Mesh( geometry, gradientMaterial )
+
+    // plane.rotation.x = Math.PI / 2
+
+    plane.position.y = -400;
+
+    scene.add( plane )
+
+
+    const createSphere = (color) => {
+
+      const radius = Math.random() * maxRadius
+
+      var geometry = new THREE.SphereGeometry( radius, 32, 32 )
+      var material = new THREE.MeshBasicMaterial( {color} )
+      var sphere = new THREE.Mesh( geometry, material )
+
+
+      function getRandomNum(size) {
+        return (Math.random() * size) - (size / 2)
+      }
+
+      sphere.position.set(
+        getRandomNum(fieldDistance),
+        getRandomNum(fieldDistance),
+        getRandomNum(fieldDistance),
+      )
+
+      return sphere
+
+
+      // scene.add(sphere)
+    }
+
+    const numStars = 500
+    const starColors = gradient_color(
+      ['#fff', '#fff', ],
+      numStars,
+    )
+    const starGroup = new THREE.Group()
+
+    ;[...Array(numStars)].map((_, i) => {
+
+      const sphere = createSphere(starColors[i])
+
+      starGroup.add( sphere )
+
+    })
+
+    starGroup.position.y = -fieldDistance
+
+    scene.add(starGroup)
+
     return {
       // Handle resize events here
       resize ({ pixelRatio, viewportWidth, viewportHeight }) {
@@ -368,6 +467,9 @@ function boot() {
       },
       // Update & render your scene here
       render ({ time, playhead }) {
+
+        starGroup.rotation.x = Math.PI * 2 * playhead
+        starGroup.rotation.y = Math.PI * 2 * playhead
 
         // controls.update();
         renderer.render(scene, camera);

@@ -5,7 +5,7 @@
   "main": "sketch.js",
   "scripts": {
     "test": "",
-    "start": "canvas-sketch sketch.js --hot"
+    "start": "canvas-sketch sketch.js"
   },
   "keywords": [],
   "author": "",
