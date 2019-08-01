@@ -92,11 +92,12 @@ function boot() {
 
 
     const near = 1;
-    const far = 200;
+    const far = 1000;
     const color = 'white';
-    // scene.fog = new THREE.Fog(color, near, far)
+    scene.fog = new THREE.Fog(color, near, far)
     scene.background = new THREE.Color(color)
 
+    const meshes = []
     const AREA_SIZE = 200
 
     const sites = [...Array(AREA_SIZE)].map((_, i) => {
@@ -105,11 +106,6 @@ function boot() {
         y: Math.random()
       }
     })
-
-    // window.sites = sites
-
-    const meshes = []
-
 
     const voronoi = new Voronoi();
     const result = voronoi.compute(sites, {
@@ -133,21 +129,14 @@ function boot() {
 
     const vertexOffset = new THREE.Vector2(-AREA_SIZE/2, -AREA_SIZE/2);
     const rotation = new THREE.Matrix4().makeRotationX(-Math.PI/2);
-    // const colors = gradient_color(['hsla(120, 63%, 40%, 1)', 'hsla(120, 63%, 40%, 1)', 'hsl(73, 73%, 69%)', 'tan', 'hsl(211, 100%, 50%)'].reverse(), result.cells.length)
-    // const colors = gradient_color(['brown', 'tan', 'hsla(39, 86%, 50%, 1)', 'hsla(0, 81%, 50%, 1)'].reverse(), result.cells.length)
     const colors = gradient_color(['white', 'white'].reverse(), result.cells.length)
-
-    //total / 2 = middle index
-
-    // range from middle index = offset
+    const size = result.cells.length
 
     result.cells.forEach((cell, ci) => {
 
       const xCoord = .5 - cell.site.x
       const yCoord = .5 - cell.site.y
 
-
-      const size = result.cells.length
 
       const xDistance = Math.abs(xCoord) * size
       const yDistance = Math.abs(yCoord) * size
@@ -157,32 +146,34 @@ function boot() {
 
       const indexFromDistance = Math.floor(distanceFromCenter)
 
+      const color = colors[indexFromDistance]
 
       const material = new THREE.MeshStandardMaterial({
-        color: colors[indexFromDistance],
+        color: 'white',
         roughness: 1,
-      });
+      })
 
-      const points = [];
+      const points = []
       for (let i = 0; i < cell.halfedges.length; i++) {
         const start = cell.halfedges[i].getStartpoint();
 
         points.push(
           new THREE.Vector2().copy(start)
             .multiplyScalar(AREA_SIZE).add(vertexOffset)
-        );
+        )
       }
-      points.push(points[0]);
+      points.push(points[0])
 
       const offset = -0.4 * Math.sqrt(Math.abs(THREE.ShapeUtils.area(points)));
       const shape = new THREE.Shape(points);
       const geometry = new THREE.ExtrudeGeometry(shape, Object.assign({}, extrudeSettings, {
         // depth: 20 + offset
       }))
+
       const mesh = new THREE.Mesh(
         geometry,
         material
-      );
+      )
 
       mesh.scale.y = 8
       mesh.geometry.applyMatrix(rotation);
@@ -191,16 +182,10 @@ function boot() {
 
       const pivot = new THREE.Group();
 
-
       scene.add( pivot );
       pivot.add( mesh );
-      // pivot.geometry.center()
 
       const box = new THREE.Box3().setFromObject( pivot );
-
-      // var helper = new THREE.Box3Helper( box, 0xffff00 );
-      // scene.add( helper );
-
       const center = box.getCenter()
 
 
@@ -209,15 +194,10 @@ function boot() {
       pivot.translateY(center.y)
       pivot.translateZ(center.z)
 
-
-      // box.center( pivot.position ); // this re-sets the mesh position
-      // mesh.position.multiplyScalar( - 1 )
-
-
-
       meshes.push({
         mesh,
         pivot,
+        center,
         cell,
         ci,
         indexFromDistance,
@@ -227,7 +207,115 @@ function boot() {
 
     })
 
+    function addShape(color, x, y, z, rx, ry, rz, s) {
 
+      const hexShape = new THREE.Shape();
+      hexShape.moveTo(0, 0.6);
+      hexShape.lineTo(0.3, 0.3);
+      hexShape.lineTo(0.2, 0);
+      hexShape.lineTo(-0.2, 0);
+      hexShape.lineTo(-0.3, 0.3);
+      hexShape.lineTo(0, 0.6);
+
+      const minLength = 5
+
+      const hexExtrudeSettings = {
+        depth: (Math.random() * 3) + minLength,
+        bevelEnabled: true,
+        bevelSegments: 1,
+        steps: 1,
+        bevelSize: (Math.random() * 1) + 1.5,
+        bevelThickness: (Math.random() * 1) + 2.5
+      }
+
+      const geo = new THREE.ExtrudeGeometry(hexShape, hexExtrudeSettings);
+
+      const mat = new THREE.MeshPhysicalMaterial({
+        color,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        visible: true,
+        specular: 8355711,
+        roughness: 20,
+      })
+
+      const mes = new THREE.Mesh(geo, mat)
+
+      mes.geometry.center()
+      mes.position.set(x, y, z);
+      mes.scale.set(s, s, s);
+
+      mes.castShadow = true
+      mes.receiveShadow = true
+
+      return mes
+    }
+
+    // mouse controls
+    const boxGeo = new THREE.BoxGeometry(8, 6, 4);
+    boxGeo.translate(0, 0, 0)
+    boxGeo.rotateX(Math.PI / 2)
+
+    const boxMat = new THREE.MeshNormalMaterial()
+    const box = new THREE.Mesh(boxGeo, boxMat)
+    box.lookAt(new THREE.Vector3(0, 1, 0))
+
+    let mouse = new THREE.Vector2()
+
+    // orb field
+    const lengthFromCenter = 45
+    const orbRadius = 20
+    const distanceDown = 6
+
+    const onmousemove = (event) => {
+
+      // mouse to orb field
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      box.position.x = lengthFromCenter * mouse.x
+      box.position.z = lengthFromCenter * -mouse.y
+
+      box.position.y = 10
+
+      meshes.map(({ pivot, center  }, i) => {
+
+        const distanceFromMouseX = center.x - box.position.x
+        const distanceFromMouseY = center.z - box.position.z
+
+        const distanceFromMouse = Math.sqrt(Math.pow(distanceFromMouseX, 2) + Math.pow(distanceFromMouseY, 2))
+
+        const distance = Math.max(distanceFromMouse, 1)
+
+        const rotation = new THREE.Vector3(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z)
+
+        pivot.lookAt(box.position)
+
+        const lookAtRotation = new THREE.Vector3(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z)
+
+        const lookAtZ = lookAtRotation.z
+
+        const percentDistance = distance / orbRadius
+
+        let newRotationZ = rotation.z
+        newRotationZ = lookAtZ / distance
+
+        const newRotation = new THREE.Vector3(rotation.x, rotation.y, newRotationZ)
+
+        pivot.rotation.set(newRotation.x, newRotation.y, newRotation.z)
+
+        if (distance < orbRadius) {
+          pivot.position.y = -distanceDown * (1 - eases.quadInOut(percentDistance))
+        }
+
+      })
+    }
+
+    onmousemove({ clientX: 0, clientY: 0, })
+    window.addEventListener("mousemove", onmousemove, false)
+
+    // lights
     const light = new THREE.PointLight('white', 1.2, 100 )
     light.position.set(30, 50, 10);
     light.castShadow = true;
@@ -248,118 +336,27 @@ function boot() {
 
     const ambLight = new THREE.AmbientLight('#fff', 0.1);
 
-    scene.add(ambLight);
+    scene.add(ambLight)
 
-    var hexShape = new THREE.Shape();
-    hexShape.moveTo(0, 0.6);
-    hexShape.lineTo(0.3, 0.3);
-    hexShape.lineTo(0.2, 0);
-    hexShape.lineTo(-0.2, 0);
-    hexShape.lineTo(-0.3, 0.3);
-    hexShape.lineTo(0, 0.6);
-
-    const minLength = 5
-
-    var hexExtrudeSettings = {
-      depth: (Math.random() * 3) + minLength,
-      bevelEnabled: true,
-      bevelSegments: 1,
-      steps: 1,
-      bevelSize: (Math.random() * 1) + 1.5,
-      bevelThickness: (Math.random() * 1) + 2.5
-    };
-
-
-
-
-    function addShape(shape, extrudeSettings, color, x, y, z, rx, ry, rz, s) {
-      var geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-
-      // var mat = new THREE.MeshPhongMaterial({
-      //   transparent: true,
-      //   shininess: 50,
-      //   depthTest: true,
-      //   emissive: 0,
-      //   specular: 8355711,
-      //   vertexColors: 0,
-      //   opacity: 0.2,
-      //   side: THREE.BackSide,
-      //   refractionRatio: .09
-      // });
-      var mat = new THREE.MeshPhysicalMaterial({
-        color: 'hsla(55, 100%, 60' +
-          '% , 1)',
-        transparent: true,
-        depthTest: true,
-        depthWrite: false,
-        visible: true,
-        // side: THREE.DoubleSide,
-        // refractionRatio: 0.01,
-        specular: 8355711,
-        roughness: 20,
-        // color: 'white'
-        // emissive: 'green',
-        // emissiveIntensity: 10,
-        // fog: true,
-        // color: 'blue'
-      });
-      var mes = new THREE.Mesh(geo, mat)
-
-      mes.geometry.center()
-
-      mes.position.set(x, y, z);
-      // mes.rotation.set(rx, ry, rz);
-      mes.scale.set(s, s, s);
-
-      mes.castShadow = true
-      mes.receiveShadow = true
-
-      return mes
-    }
-
-    const crystalDistanceFromCamera = cameraDistanceFromCenter + 20
-
-    const crystalY = 45
-
-    const crystalDistanceFromCenter = cameraDistanceFromCenter - crystalDistanceFromCamera
-
-    const crystal = addShape(
-      hexShape,
-      hexExtrudeSettings,
-      0xff3333, // color
-      -crystalDistanceFromCenter, // x pos
-      crystalY, // y pos
-      crystalDistanceFromCenter, // z pos
-      Math.random() * 2 * Math.PI, // x rotation
-      Math.random() * 2 * Math.PI, // y rotation
-      Math.random() * 2 * Math.PI, // z rotation
-      1
-    )
-
-
-    // scene.add(crystal)
-
-    // const light7 = new THREE.PointLight('white', 1.2, 100 )
-    // light7.position.set(
-    //   -crystalDistanceFromCenter,
-    //   50,
-    //   crystalDistanceFromCenter);
-    // light7.castShadow = true;
+    // background
+    // const crystalDistanceFromCamera = cameraDistanceFromCenter + 20
     //
-    // scene.add(light7)
-
-
-    const animationKeys = Object.keys(eases)
-
-    const numMeshesToAnimate = 10
-
-    const meshIndexesToAnimation = [...Array(numMeshesToAnimate)].map(() => {
-      return Math.floor(Math.random()*meshes.length)
-    })
-
-    const meshAnimationsByIndex = meshIndexesToAnimation.map(() => {
-      return eases[animationKeys[Math.floor(Math.random()*animationKeys.length)]]
-    })
+    // const crystalY = -25
+    //
+    // const crystalDistanceFromCenter = cameraDistanceFromCenter - crystalDistanceFromCamera
+    //
+    // const crystal = addShape(
+    //   'purple', // color
+    //   -crystalDistanceFromCenter, // x pos
+    //   crystalY, // y pos
+    //   crystalDistanceFromCenter, // z pos
+    //   Math.random() * 2 * Math.PI, // x rotation
+    //   Math.random() * 2 * Math.PI, // y rotation
+    //   Math.random() * 2 * Math.PI, // z rotation
+    //   1
+    // )
+    //
+    // scene.add(crystal)
 
     return {
       // Handle resize events here
@@ -371,90 +368,6 @@ function boot() {
       },
       // Update & render your scene here
       render ({ time, playhead }) {
-        // mesh.rotation.y = time * (10 * Math.PI / 180);
-
-        // total duration
-
-        // divide duration into chunks
-        // const pointInAnimation = (duration * playhead)
-
-
-        meshIndexesToAnimation.map((meshIndex, index) => {
-
-          const {pivot} = meshes[meshIndex]
-          const meshAnimation = meshAnimationsByIndex[index]
-
-          pivot.rotation.x = playhead
-
-        })
-
-
-
-        // meshes.map(({
-        //   mesh,
-        //   cell,
-        //   ci,
-        //   indexFromDistance,
-        //   xCoord,
-        //   yCoord,
-        // }, i) => {
-        //
-        //   const delay = i
-        //
-        //
-        //
-        //
-        //   // console.log(yDistance)
-        //
-        //
-        //   // const y = Math.abs(
-        //   //     Math.sin((playhead * Math.PI / 2 * 4) + -distanceFromCenter / waveSize) + -distanceFromCenter * columnWaveSize
-        //   //   ) + 2
-        //
-        //   // console.log(distanceFromCenter)
-        //
-        //
-        //   // console.log((playhead * 100 * ci))
-        //
-        //   // mesh.scale.y = xDistance + yDistance
-        //
-        //   const waveLength = 15
-        //
-        //   const dampener = .5
-        //   const indexOffset = meshes.length - indexFromDistance + 1
-        //   const individualOffset = indexOffset * dampener
-        //
-        //   const amplitude = 15
-        //
-        //
-        //   // const individualWavePoint = Math.abs(
-        //   //   Math.sin(
-        //   //
-        //   //     (playhead * Math.PI / 2 * 4)
-        //   //     + individualOffset / waveLength
-        //   //
-        //   //   ) * amplitude
-        //   // )
-        //
-        //   // mesh.rotation.z = playhead
-        //
-        //   mesh.position.x = pointInAnimation
-        //
-        //   // mesh.scale.y = individualWavePoint
-        //   // crystal.rotation.x = playhead * (4 * Math.PI)
-        //
-        //   // mesh.scale.y = playhead * (10 * Math.PI / 180)
-        //
-        //   // mesh.scale.y = playhead * (10 * Math.PI / 180)
-        //
-        //   // mesh.position.y = playhead * -individualOffset
-        // })
-
-        // console.log(Math.sin(playhead + 1 / 5))
-
-        // console.log(playhead * 100 * meshes[10].ci)
-
-
 
         // controls.update();
         renderer.render(scene, camera);
