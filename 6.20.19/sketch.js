@@ -44,7 +44,7 @@ const canvasSketch = require('canvas-sketch');
 global.THREE = require('three');
 
 // Include any additional ThreeJS examples below
-// require('three/examples/js/controls/OrbitControls');
+require('three/examples/js/controls/OrbitControls');
 
 
 const duration = 45
@@ -79,11 +79,16 @@ function boot() {
     yt:0, yb:1
   });
 
+
+
   const sketch = ({ context }) => {
     // Create a renderer
     const renderer = new THREE.WebGLRenderer({
       context
     });
+
+    renderer.shadowMap.enabled = true;
+
 
     // WebGL background color
     // renderer.setClearColor('black', 1);
@@ -92,7 +97,7 @@ function boot() {
     const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
     // camera.controls = new THREE.OrbitControls(camera)
 
-    const CAMERA_Y = 100
+    const CAMERA_Y = 110
 
     const cameraDistanceFromCenter = 0
 
@@ -102,7 +107,7 @@ function boot() {
     camera.far = 1000
 
     // Setup camera controller
-    // const controls = new THREE.OrbitControls(camera, context.canvas);
+    const controls = new THREE.OrbitControls(camera, context.canvas);
 
     // Setup your scene
     const scene = new THREE.Scene()
@@ -218,7 +223,7 @@ function boot() {
       hexShape.lineTo(-0.3, 0.3);
       hexShape.lineTo(0, 0.6);
 
-      const minLength = 5
+      const minLength = 18
 
       const hexExtrudeSettings = {
         depth: (Math.random() * 3) + minLength,
@@ -231,14 +236,10 @@ function boot() {
 
       const geo = new THREE.ExtrudeGeometry(hexShape, hexExtrudeSettings);
 
-      const mat = new THREE.MeshPhysicalMaterial({
-        color,
-        transparent: true,
-        depthTest: true,
-        depthWrite: false,
-        visible: true,
-        specular: 8355711,
-        roughness: 20,
+      const mat = new THREE.MeshStandardMaterial({
+        color: '#b279f4',
+        roughness: 0.55,
+        metalness: 0.8,
       })
 
       const mes = new THREE.Mesh(geo, mat)
@@ -265,7 +266,7 @@ function boot() {
     let mouse = new THREE.Vector2()
 
     // orb field
-    const lengthFromCenter = 45
+    const lengthFromCenter = 46
     const orbRadius = 25
     const distanceDown = 11
 
@@ -320,47 +321,80 @@ function boot() {
     window.addEventListener("mousemove", onmousemove, false)
 
     // lights
-    const light = new THREE.PointLight('white', 1.2, 100 )
-    light.position.set(30, 50, 10);
-    light.castShadow = true;
-    const light2 = new THREE.PointLight('white', 1.5, 100 )
-    light2.position.set(-60, 50, -15);
-    light2.castShadow = true;
-    const light3 = new THREE.PointLight('white', 1.1, 100 )
-    light3.position.set(-65, 50, 60);
-    light3.castShadow = true;
-    const light4 = new THREE.PointLight('white', 1.1, 100 )
-    light4.position.set(35, 50, 60);
-    light4.castShadow = true;
-    const light5 = new THREE.PointLight('white', 2, 100 )
-    light5.position.set(40, 50, -50);
-    light5.castShadow = true;
-    scene.add( light, light2, light3, light4, light5 );
+
+    const crystalPointLight = new THREE.PointLight('#b146ff', 0.3, 100 )
+    crystalPointLight.position.set(0, -10, 0);
+    crystalPointLight.castShadow = true;
+
+    const crystalPointLight2 = new THREE.PointLight('#5854ff', 0.4, 100 )
+    crystalPointLight2.position.set(15, -40, 20);
+    crystalPointLight2.castShadow = true;
+
+    const crystalPointLight3 = new THREE.PointLight('#5854ff', 0.3, 100 )
+    crystalPointLight2.position.set(-20, -16, -20);
+    crystalPointLight2.castShadow = true;
+
+    const tilePointLight2 = new THREE.PointLight('white', 0.75, 100 )
+    tilePointLight2.position.set(50, 40, 50);
+    tilePointLight2.castShadow = true;
+    const tilePointLight3 = new THREE.PointLight('white', 0.75, 100 )
+    tilePointLight3.position.set(-50, 60, -50);
+    tilePointLight3.castShadow = true;
+    const tilePointLight4 = new THREE.PointLight('white', 0.5, 100 )
+    tilePointLight4.position.set(-25, 70, 50);
+    tilePointLight4.castShadow = true;
+
+    scene.add(
+      crystalPointLight,
+      crystalPointLight2,
+      crystalPointLight3,
+      tilePointLight2,
+      tilePointLight3,
+      tilePointLight4,
+    );
+
+    // const crystalPointLightHelper = new THREE.PointLightHelper( crystalPointLight, 1 );
+    // const tilePointLightHelper2 = new THREE.PointLightHelper( tilePointLight2, 1 );
+    // const tilePointLightHelper3 = new THREE.PointLightHelper( tilePointLight3, 1 );
+    // const tilePointLightHelper4 = new THREE.PointLightHelper( tilePointLight4, 1 );
+    // const paperPointLightHelper = new THREE.PointLightHelper( paperPointLight, 1 );
 
 
     const ambLight = new THREE.AmbientLight('#fff', 0.1);
+    const ambLight2 = new THREE.AmbientLight('#fff', 1.5);
 
-    scene.add(ambLight)
+    scene.add(
+      // ambLight,
+      ambLight2,
+    )
+
+    // scene.add(crystalPointLightHelper)
+    // scene.add(tilePointLightHelper2)
+    // scene.add(tilePointLightHelper3)
+    // scene.add(tilePointLightHelper4)
+    // scene.add(paperPointLightHelper)
 
     // background
-    // const crystalDistanceFromCamera = cameraDistanceFromCenter + 20
-    //
-    // const crystalY = -25
-    //
-    // const crystalDistanceFromCenter = cameraDistanceFromCenter - crystalDistanceFromCamera
-    //
-    // const crystal = addShape(
-    //   'purple', // color
-    //   -crystalDistanceFromCenter, // x pos
-    //   crystalY, // y pos
-    //   crystalDistanceFromCenter, // z pos
-    //   Math.random() * 2 * Math.PI, // x rotation
-    //   Math.random() * 2 * Math.PI, // y rotation
-    //   Math.random() * 2 * Math.PI, // z rotation
-    //   1
-    // )
-    //
-    // scene.add(crystal)
+    const crystalDistanceFromCamera = cameraDistanceFromCenter + 20
+
+    const crystalY = -40
+
+    const crystalDistanceFromCenter = cameraDistanceFromCenter - crystalDistanceFromCamera
+
+    const crystal = addShape(
+      'purple', // color
+      -0, // x pos
+      crystalY, // y pos
+      0, // z pos
+      Math.random() * 2 * Math.PI, // x rotation
+      Math.random() * 2 * Math.PI, // y rotation
+      Math.random() * 2 * Math.PI, // z rotation
+      5
+    )
+
+
+
+    scene.add(crystal)
 
     const fieldDistance = 400
     const maxRadius = 1
@@ -404,58 +438,32 @@ function boot() {
       700,
     )
 
-    const plane = new THREE.Mesh( geometry, gradientMaterial )
+    const geometryPaper = new THREE.BoxGeometry(
+      40,
+      2,
+      80,
+    )
 
+    const plane = new THREE.Mesh( geometry, gradientMaterial )
+    const paper = new THREE.Mesh( geometryPaper, new THREE.MeshStandardMaterial() )
+
+    paper.castShadow = true
+    paper.receiveShadow = true
     // plane.rotation.x = Math.PI / 2
+
+    paper.material.colorWrite = false;
+    paper.material.depthWrite = false;
+    // paper.material.transparent = true; // only needed if there are other transparent objects
+    paper.renderOrder = Infinity;
+
+    paper.position.y = 10
+    paper.position.z = 10
+
+    // scene.add(paper)
 
     plane.position.y = -400;
 
     scene.add( plane )
-
-
-    const createSphere = (color) => {
-
-      const radius = Math.random() * maxRadius
-
-      var geometry = new THREE.SphereGeometry( radius, 32, 32 )
-      var material = new THREE.MeshBasicMaterial( {color} )
-      var sphere = new THREE.Mesh( geometry, material )
-
-
-      function getRandomNum(size) {
-        return (Math.random() * size) - (size / 2)
-      }
-
-      sphere.position.set(
-        getRandomNum(fieldDistance),
-        getRandomNum(fieldDistance),
-        getRandomNum(fieldDistance),
-      )
-
-      return sphere
-
-
-      // scene.add(sphere)
-    }
-
-    const numStars = 500
-    const starColors = gradient_color(
-      ['#fff', '#fff', ],
-      numStars,
-    )
-    const starGroup = new THREE.Group()
-
-    ;[...Array(numStars)].map((_, i) => {
-
-      const sphere = createSphere(starColors[i])
-
-      starGroup.add( sphere )
-
-    })
-
-    starGroup.position.y = -fieldDistance
-
-    scene.add(starGroup)
 
     return {
       // Handle resize events here
@@ -468,8 +476,8 @@ function boot() {
       // Update & render your scene here
       render ({ time, playhead }) {
 
-        starGroup.rotation.x = Math.PI * 2 * playhead
-        starGroup.rotation.y = Math.PI * 2 * playhead
+        crystal.rotation.z = Math.PI * 2 * playhead * 4
+        crystal.rotation.y = Math.PI * 2 * playhead * 8
 
         // controls.update();
         renderer.render(scene, camera);

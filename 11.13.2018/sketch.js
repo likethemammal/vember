@@ -251,22 +251,22 @@ const sketch = ({ context }) => {
   light1.castShadow = true
   const light1Helper = new THREE.PointLightHelper(light1)
 
-  const light2 = new THREE.PointLight( 0x5854ff, 0.3, 100 )
+  const light2 = new THREE.PointLight( '#5854ff', 0.3, 100 )
   light2.castShadow = true
   light2.position.set( -60, 5, 10 )
   const light2Helper = new THREE.PointLightHelper(light2)
 
-  const light3 = new THREE.PointLight( 0x632ecf, 0.3, 100 )
+  const light3 = new THREE.PointLight( '#632ecf', 0.3, 100 )
   // light3.castShadow = true
   light3.position.set( 5, 5, 4)
   const light3Helper = new THREE.PointLightHelper(light3)
 
-  const light4 = new THREE.PointLight( 0x632ecf, 0.2, 100 )
+  const light4 = new THREE.PointLight( '#632ecf', 0.2, 100 )
   light4.position.set( -4, 4, -4 )
   light4.castShadow = true
   const light4Helper = new THREE.PointLightHelper(light4)
 
-  const light5 = new THREE.PointLight( 0x632ecf, 0.4, 100 )
+  const light5 = new THREE.PointLight( '#632ecf', 0.4, 100 )
   light5.position.set( -3, 0, 3 )
   light5.castShadow = true
   const light5Helper = new THREE.PointLightHelper(light5)
