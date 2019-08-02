@@ -114,7 +114,7 @@ function boot() {
 
 
     const near = 1;
-    const far = 1000;
+    const far = 500;
     const color = 'black';
     // scene.fog = new THREE.Fog(color, near, far)
     scene.background = new THREE.Color(color)
@@ -326,13 +326,17 @@ function boot() {
     crystalPointLight.position.set(0, -10, 0);
     crystalPointLight.castShadow = true;
 
-    const crystalPointLight2 = new THREE.PointLight('#5854ff', 0.4, 100 )
-    crystalPointLight2.position.set(15, -40, 20);
+    const crystalPointLight2 = new THREE.PointLight('#5854ff', 0.65, 100 )
+    crystalPointLight2.position.set(50, -80, 45);
     crystalPointLight2.castShadow = true;
 
     const crystalPointLight3 = new THREE.PointLight('#5854ff', 0.3, 100 )
-    crystalPointLight2.position.set(-20, -16, -20);
-    crystalPointLight2.castShadow = true;
+    crystalPointLight3.position.set(-0, -10, -0);
+    crystalPointLight3.castShadow = true;
+
+    const crystalPointLight4 = new THREE.PointLight('#5854ff', 0.6, 100 )
+    crystalPointLight4.position.set(-40, -70, 45);
+    crystalPointLight4.castShadow = true;
 
     const tilePointLight2 = new THREE.PointLight('white', 0.75, 100 )
     tilePointLight2.position.set(50, 40, 50);
@@ -348,19 +352,22 @@ function boot() {
       crystalPointLight,
       crystalPointLight2,
       crystalPointLight3,
+      crystalPointLight4,
       tilePointLight2,
       tilePointLight3,
       tilePointLight4,
     );
 
     // const crystalPointLightHelper = new THREE.PointLightHelper( crystalPointLight, 1 );
+    const crystalPointLightHelper2 = new THREE.PointLightHelper( crystalPointLight2, 1 );
+    const crystalPointLightHelper3 = new THREE.PointLightHelper( crystalPointLight3, 1 );
+    const crystalPointLightHelper4 = new THREE.PointLightHelper( crystalPointLight4, 1 );
     // const tilePointLightHelper2 = new THREE.PointLightHelper( tilePointLight2, 1 );
     // const tilePointLightHelper3 = new THREE.PointLightHelper( tilePointLight3, 1 );
     // const tilePointLightHelper4 = new THREE.PointLightHelper( tilePointLight4, 1 );
     // const paperPointLightHelper = new THREE.PointLightHelper( paperPointLight, 1 );
 
 
-    const ambLight = new THREE.AmbientLight('#fff', 0.1);
     const ambLight2 = new THREE.AmbientLight('#fff', 1.5);
 
     scene.add(
@@ -369,6 +376,9 @@ function boot() {
     )
 
     // scene.add(crystalPointLightHelper)
+    // scene.add(crystalPointLightHelper2)
+    // scene.add(crystalPointLightHelper3)
+    // scene.add(crystalPointLightHelper4)
     // scene.add(tilePointLightHelper2)
     // scene.add(tilePointLightHelper3)
     // scene.add(tilePointLightHelper4)
@@ -377,7 +387,7 @@ function boot() {
     // background
     const crystalDistanceFromCamera = cameraDistanceFromCenter + 20
 
-    const crystalY = -40
+    const crystalY = -60
 
     const crystalDistanceFromCenter = cameraDistanceFromCenter - crystalDistanceFromCamera
 
@@ -392,9 +402,17 @@ function boot() {
       5
     )
 
+    const degreesX = 45
+    const degreesZ = 25
 
+    crystal.rotation.x = Math.PI * 2 * (degreesX/360)
+    crystal.rotation.z = Math.PI * 2 * (degreesZ/360)
 
-    scene.add(crystal)
+    const crystalGroup = new THREE.Group()
+
+    crystalGroup.add(crystal)
+
+    scene.add(crystalGroup)
 
     const fieldDistance = 400
     const maxRadius = 1
@@ -439,9 +457,9 @@ function boot() {
     )
 
     const geometryPaper = new THREE.BoxGeometry(
-      40,
+      70,
       2,
-      80,
+      100,
     )
 
     const plane = new THREE.Mesh( geometry, gradientMaterial )
@@ -457,7 +475,7 @@ function boot() {
     paper.renderOrder = Infinity;
 
     paper.position.y = 10
-    paper.position.z = 10
+    paper.position.z = 0
 
     // scene.add(paper)
 
@@ -476,8 +494,8 @@ function boot() {
       // Update & render your scene here
       render ({ time, playhead }) {
 
-        crystal.rotation.z = Math.PI * 2 * playhead * 4
-        crystal.rotation.y = Math.PI * 2 * playhead * 8
+        // crystal.rotation.z = Math.PI * 2 * playhead * 4
+        crystalGroup.rotation.y = Math.PI * 2 * playhead * 4
 
         // controls.update();
         renderer.render(scene, camera);
