@@ -1,51 +1,13 @@
-/**
- * minimalistic dependency-loader using rawgit to fetch javascript-files
- * from github.
- */
-function loadDeps(deps) {
-  const githubUrl = (project, file) =>
-    `https://cdn.rawgit.com/${project}/master/${file}`;
 
-  function loadScripts(scripts) {
-    return Promise.all(scripts.map(
-      src => new Promise(resolve => {
-        const s = document.createElement('script');
-        s.onload = resolve;
-        s.src = src;
-        document.body.appendChild(s);
-      })
-    ));
-  }
-
-  const urls = [];
-  Object.keys(deps).forEach(project => {
-    urls.push(...deps[project].map(githubUrl.bind(null, project)));
-  });
-
-  return loadScripts(urls);
-}
-
-const deps = {
-  'gorhill/Javascript-Voronoi': [
-    'rhill-voronoi-core.js'
-  ]
-};
-
-loadDeps(deps).then(boot);
-
-
+import Voronoi from './voronoi'
 import eases from 'eases'
 import gradient_color from 'gradient-color'
+import canvasSketch from 'canvas-sketch'
+import * as THREE from 'three'
 
+global.THREE = THREE
 
-const canvasSketch = require('canvas-sketch');
-
-// Ensure ThreeJS is in global scope for the 'examples/'
-global.THREE = require('three');
-
-// Include any additional ThreeJS examples below
-require('three/examples/js/controls/OrbitControls');
-
+require('three/examples/js/controls/OrbitControls')
 
 const duration = 45
 
@@ -60,6 +22,7 @@ const settings = {
   fps: 30,
 }
 
+boot()
 
 function boot() {
 
@@ -82,16 +45,11 @@ function boot() {
 
 
   const sketch = ({ context }) => {
-    // Create a renderer
     const renderer = new THREE.WebGLRenderer({
       context
     });
 
     renderer.shadowMap.enabled = true;
-
-
-    // WebGL background color
-    // renderer.setClearColor('black', 1);
 
     //CAMERA
     const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
@@ -113,10 +71,7 @@ function boot() {
     const scene = new THREE.Scene()
 
 
-    const near = 1;
-    const far = 500;
     const color = 'black';
-    // scene.fog = new THREE.Fog(color, near, far)
     scene.background = new THREE.Color(color)
 
     const extrudeSettings = {
@@ -359,9 +314,9 @@ function boot() {
     );
 
     // const crystalPointLightHelper = new THREE.PointLightHelper( crystalPointLight, 1 );
-    const crystalPointLightHelper2 = new THREE.PointLightHelper( crystalPointLight2, 1 );
-    const crystalPointLightHelper3 = new THREE.PointLightHelper( crystalPointLight3, 1 );
-    const crystalPointLightHelper4 = new THREE.PointLightHelper( crystalPointLight4, 1 );
+    // const crystalPointLightHelper2 = new THREE.PointLightHelper( crystalPointLight2, 1 );
+    // const crystalPointLightHelper3 = new THREE.PointLightHelper( crystalPointLight3, 1 );
+    // const crystalPointLightHelper4 = new THREE.PointLightHelper( crystalPointLight4, 1 );
     // const tilePointLightHelper2 = new THREE.PointLightHelper( tilePointLight2, 1 );
     // const tilePointLightHelper3 = new THREE.PointLightHelper( tilePointLight3, 1 );
     // const tilePointLightHelper4 = new THREE.PointLightHelper( tilePointLight4, 1 );
@@ -414,9 +369,6 @@ function boot() {
 
     scene.add(crystalGroup)
 
-    const fieldDistance = 400
-    const maxRadius = 1
-
     const colorTop = 'hsl(266, 73%, 8%)'
     const colorBottom = 'hsl(293, 68%, 13%)'
 
@@ -430,24 +382,24 @@ function boot() {
         }
       },
       vertexShader: `
-    varying vec2 vUv;
-
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-    }
-  `,
-      fragmentShader: `
-    uniform vec3 color1;
-    uniform vec3 color2;
-  
-    varying vec2 vUv;
+        varying vec2 vUv;
     
-    void main() {
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }
+      `,
+          fragmentShader: `
+        uniform vec3 color1;
+        uniform vec3 color2;
       
-      gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0);
-    }
-  `,
+        varying vec2 vUv;
+        
+        void main() {
+          
+          gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0);
+        }
+      `,
     })
 
     const geometry = new THREE.BoxGeometry(
