@@ -13,6 +13,6 @@
     "canvas-sketch": "^0.1.0",
     "eases": "^1.0.8",
     "gradient-color": "^2.0.1",
-    "three": "^0.98.0"
+    "three": "^0.137.0"
   }
 }
